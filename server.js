@@ -16,7 +16,7 @@ app.use(express.static('public'));
 const spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-    redirectUri: `https://${process.env.RPI_IP}:5000/callback`
+    redirectUri: process.env.RPI_IP
 });
 
 let accessToken = null;
