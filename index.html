@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h3 {
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .volume-display {
+            text-align: center;
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .volume-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .volume-slider-container {
+            margin: 20px 0;
+        }
+
+        .volume-slider {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-volume-up {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .btn-volume-down {
+            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+        }
+
+        .btn-mute {
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+            grid-column: 1 / -1;
+        }
+
+        .btn-a {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-b {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-spotify-auth {
+            background: #1DB954;
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-playpause {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 100%;
+            padding: 15px;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+
+        .btn-playlist {
+            background: #1DB954;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 12px;
+            font-size: 1.1em;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+        }
+
+        .button-container button {
+            flex: 1;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.hidden {
+            display: none;
+        }
+
+        .auth-warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Home Control</h1>
+
+        <!-- Volume Control -->
+        <div class="card">
+            <h2>🔊 Volume Control</h2>
+            
+            <div class="volume-display" id="volume-display">50%</div>
+
+            <div class="volume-buttons">
+                <button class="btn-volume-up" onclick="volumeUp()">🔊 Up</button>
+                <button class="btn-volume-down" onclick="volumeDown()">🔉 Down</button>
+                <button class="btn-mute" onclick="toggleMute()">🔇 Mute/Unmute</button>
+            </div>
+
+            <div class="volume-slider-container">
+                <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value="50" 
+                    class="volume-slider" 
+                    id="volume-slider"
+                    oninput="setVolume(this.value)"
+                >
+            </div>
+
+            <div id="volume-status" class="status hidden"></div>
+        </div>
+
+        <!-- Spotify Control -->
+        <div class="card">
+            <h2>🎵 Spotify</h2>
+            
+            <div id="spotify-auth-warning" class="auth-warning" style="display: none;">
+                Please connect Spotify first
+            </div>
+            
+            <button class="btn-spotify-auth" onclick="authenticateSpotify()" id="auth-button">
+                Connect Spotify
+            </button>
+
+            <div id="spotify-controls" style="display: none;">
+                <button class="btn-playpause" onclick="togglePlayback()">
+                    ⏯️ Play/Pause
+                </button>
+
+                <button class="btn-playpause" onclick="toggleShuffle()">
+                    🔀 Toggle Shuffle
+                </button>
+
+                <h3>Playlists</h3>
+                <button class="btn-playlist" onclick="playPlaylist('spotify:playlist:37i9dQZF1DXcBWIGoYBM5M')">
+                    🔥 Today's Top Hits
+                </button>
+                <button class="btn-playlist" onclick="playPlaylist('spotify:playlist:37i9dQZF1DX0XUsuxWHRQd')">
+                    🎤 RapCaviar
+                </button>
+                <!-- Add more playlist buttons here with your own playlist URIs -->
+
+                <h3>Albums</h3>
+                <button class="btn-playlist" onclick="playPlaylist('spotify:album:2ODvWsOgouMbaA5xf0RkJe')">
+                    🎸 Thriller - Michael Jackson
+                </button>
+                <!-- Add more album buttons here with your own album URIs -->
+            </div>
+
+            <div id="spotify-status" class="status hidden"></div>
+        </div>
+
+        <!-- Button Controls -->
+        <div class="card">
+            <h2>⚡ Controls</h2>
+            <div class="button-container">
+                <button class="btn-a" onclick="pressButton('a')">A</button>
+                <button class="btn-b" onclick="pressButton('b')">B</button>
+            </div>
+            <div id="button-status" class="status hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        let shuffleEnabled = true;
+
+        // Load current volume and check Spotify auth on page load
+        window.onload = async function() {
+            await updateVolumeDisplay();
+            await checkSpotifyAuth();
+        };
+
+        async function updateVolumeDisplay() {
+            try {
+                const response = await fetch('/api/volume');
+                const data = await response.json();
+                
+                if (data.volume !== undefined) {
+                    document.getElementById('volume-display').textContent = data.volume + '%';
+                    document.getElementById('volume-slider').value = data.volume;
+                }
+            } catch (error) {
+                console.error('Error getting volume:', error);
+            }
+        }
+
+        async function volumeUp() {
+            const statusElement = document.getElementById('volume-status');
+            
+            try {
+                const response = await fetch('/api/volume/up', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('volume-display').textContent = data.volume + '%';
+                    document.getElementById('volume-slider').value = data.volume;
+                    statusElement.textContent = 'Volume: ' + data.volume + '%';
+                    statusElement.className = 'status success';
+                } else {
+                    statusElement.textContent = 'Error';
+                    statusElement.className = 'status error';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusElement.textContent = 'Connection Error';
+                statusElement.className = 'status error';
+            }
+
+            setTimeout(() => {
+                statusElement.className = 'status hidden';
+            }, 1500);
+        }
+
+        async function volumeDown() {
+            const statusElement = document.getElementById('volume-status');
+            
+            try {
+                const response = await fetch('/api/volume/down', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('volume-display').textContent = data.volume + '%';
+                    document.getElementById('volume-slider').value = data.volume;
+                    statusElement.textContent = 'Volume: ' + data.volume + '%';
+                    statusElement.className = 'status success';
+                } else {
+                    statusElement.textContent = 'Error';
+                    statusElement.className = 'status error';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusElement.textContent = 'Connection Error';
+                statusElement.className = 'status error';
+            }
+
+            setTimeout(() => {
+                statusElement.className = 'status hidden';
+            }, 1500);
+        }
+
+        async function toggleMute() {
+            const statusElement = document.getElementById('volume-status');
+            
+            try {
+                const response = await fetch('/api/volume/mute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    statusElement.textContent = data.muted ? '🔇 Muted' : '🔊 Unmuted';
+                    statusElement.className = 'status success';
+                } else {
+                    statusElement.textContent = 'Error';
+                    statusElement.className = 'status error';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusElement.textContent = 'Connection Error';
+                statusElement.className = 'status error';
+            }
+
+            setTimeout(() => {
+                statusElement.className = 'status hidden';
+            }, 1500);
+        }
+
+        async function setVolume(volume) {
+            document.getElementById('volume-display').textContent = volume + '%';
+            
+            try {
+                await fetch('/api/volume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ volume: parseInt(volume) })
+                });
+            } catch (error) {
+                console.error('Error setting volume:', error);
+            }
+        }
+
+        async function checkSpotifyAuth() {
+            try {
+                const response = await fetch('/api/spotify/auth-status');
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    document.getElementById('spotify-auth-warning').style.display = 'none';
+                    document.getElementById('spotify-controls').style.display = 'block';
+                    document.getElementById('auth-button').textContent = '✓ Spotify Connected';
+                    document.getElementById('auth-button').style.background = '#1ed760';
+                } else {
+                    document.getElementById('spotify-auth-warning').style.display = 'block';
+                    document.getElementById('spotify-controls').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking Spotify auth:', error);
+            }
+        }
+
+        function authenticateSpotify() {
+            window.location.href = '/login';
+        }
+
+        async function togglePlayback() {
+            const statusElement = document.getElementById('spotify-status');
+            
+            try {
+                const response = await fetch('/api/spotify/playpause', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    statusElement.textContent = data.action === 'playing' ? '▶️ Playing' : '⏸️ Paused';
+                    statusElement.className = 'status success';
+                } else {
+                    statusElement.textContent = 'Error: ' + (data.error || 'Unknown error');
+                    statusElement.className = 'status error';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusElement.textContent = 'Connection Error';
+                statusElement.className = 'status error';
+            }
+
+            setTimeout(() => {
+                statusElement.className = 'status hidden';
+            }, 2000);
+        }
+
+        async function toggleShuffle() {
+            shuffleEnabled = !shuffleEnabled;
+            const statusElement = document.getElementById('spotify-status');
+            
+            try {
+                const response = await fetch('/api/spotify/shuffle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state: shuffleEnabled })
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    statusElement.textContent = data.shuffle ? '🔀 Shuffle ON' : '➡️ Shuffle OFF';
+                    statusElement.className = 'status success';
+                } else {
+                    statusElement.textContent = 'Error: ' + data.error;
+                    statusElement.className = 'status error';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusElement.textContent = 'Connection Error';
+                statusElement.className = 'status error';
+            }
+
+            setTimeout(() => {
+                statusElement.className = 'status hidden';
+            }, 2000);
+        }
+
+        async function playPlaylist(uri) {
+            const statusElement = document.getElementById('spotify-status');
+            
+            try {
+                const response = await fetch('/api/spotify/playlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uri: uri })
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    statusElement.textContent = '▶️ Playing';
+                    statusElement.className = 'status success';
+                } else {
+                    statusElement.textContent = 'Error: ' + data.error;
+                    statusElement.className = 'status error';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusElement.textContent = 'Connection Error';
+                statusElement.className = 'status error';
+            }
+
+            setTimeout(() => {
+                statusElement.className = 'status hidden';
+            }, 2000);
+        }
+
+        async function pressButton(button) {
+            const statusElement = document.getElementById('button-status');
+            
+            try {
+                const response = await fetch(`/api/button/${button}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    statusElement.textContent = `Button ${button.toUpperCase()} pressed ✓`;
+                    statusElement.className = 'status success';
+                } else {
+                    statusElement.textContent = 'Failed';
+                    statusElement.className = 'status error';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusElement.textContent = 'Connection Error';
+                statusElement.className = 'status error';
+            }
+
+            setTimeout(() => {
+                statusElement.className = 'status hidden';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
