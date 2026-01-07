@@ -74,20 +74,53 @@ app.get('/api/spotify/auth-status', (req, res) => {
 // Play a specific playlist
 app.post('/api/spotify/playlist', async (req, res) => {
     const { uri, shuffle } = req.body;
-    
+
     if (!accessToken) {
         return res.status(401).json({ error: 'Not authenticated' });
     }
-    
+
     try {
+        // Get available devices
+        const devicesData = await spotifyApi.getMyDevices();
+        const devices = devicesData.body.devices;
+
+        if (devices.length === 0) {
+            return res.status(404).json({
+                error: 'No active Spotify devices found. Please open Spotify on a device first.'
+            });
+        }
+
+        // Find an active device or use the first available one
+        let targetDevice = devices.find(d => d.is_active);
+        if (!targetDevice) {
+            targetDevice = devices[0];
+        }
+
         // Enable shuffle if requested (default true)
         const shuffleMode = shuffle !== undefined ? shuffle : true;
         await spotifyApi.setShuffle(shuffleMode);
 
-        await spotifyApi.play({ context_uri: uri });
-        res.json({ status: 'success', message: 'Playlist started', shuffle: shuffleMode });
+        await spotifyApi.play({
+            context_uri: uri,
+            device_id: targetDevice.id
+        });
+
+        res.json({
+            status: 'success',
+            message: 'Playlist started',
+            shuffle: shuffleMode,
+            device: targetDevice.name
+        });
     } catch (error) {
         console.error('Error playing playlist:', error);
+
+        // Provide more helpful error messages
+        if (error.message.includes('UNKNOWN')) {
+            return res.status(500).json({
+                error: 'No active Spotify device. Please open Spotify on a device and start playing something first.'
+            });
+        }
+
         res.status(500).json({ error: error.message });
     }
 });
@@ -191,31 +224,46 @@ app.post('/api/volume/mute', async (req, res) => {
     }
 });
 
-// Sleep timer endpoint
+// Sleep timer endpoint using system timer
 app.post('/api/spotify/sleep-timer', async (req, res) => {
     if (!accessToken) {
         return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    // Clear any existing sleep timer
-    if (sleepTimer) {
-        clearTimeout(sleepTimer);
-        sleepTimer = null;
-    }
-
-    // Set timer for 45 minutes (45 * 60 * 1000 milliseconds)
-    sleepTimer = setTimeout(async () => {
+    try {
+        // Cancel any existing sleep timer job
         try {
+            await execPromise('pkill -f "sleep.*spotify-sleep-timer"');
+        } catch (error) {
+            // Ignore if no existing timer
+        }
+
+        // Create a background job that will pause Spotify after 45 minutes
+        const sleepCommand = `(sleep 2700 && curl -k -X POST https://localhost:5000/api/spotify/pause-internal) &`;
+        await execPromise(sleepCommand);
+
+        console.log('Sleep timer set for 45 minutes using system timer');
+        res.json({ status: 'success', message: 'Sleep timer set for 45 minutes' });
+    } catch (error) {
+        console.error('Error setting sleep timer:', error);
+        res.status(500).json({ error: 'Failed to set sleep timer' });
+    }
+});
+
+// Internal endpoint to pause playback (called by system timer)
+app.post('/api/spotify/pause-internal', async (req, res) => {
+    try {
+        if (accessToken) {
             await spotifyApi.pause();
             console.log('Sleep timer triggered - playback paused');
-            sleepTimer = null;
-        } catch (error) {
-            console.error('Error pausing playback from sleep timer:', error);
+            res.json({ status: 'success' });
+        } else {
+            res.status(401).json({ error: 'Not authenticated' });
         }
-    }, 45 * 60 * 1000);
-
-    console.log('Sleep timer set for 45 minutes');
-    res.json({ status: 'success', message: 'Sleep timer set for 45 minutes' });
+    } catch (error) {
+        console.error('Error pausing playback from sleep timer:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Button A and B endpoints
