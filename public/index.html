@@ -257,8 +257,8 @@ h3 {
                 </button>
 
                 <h3 style="margin-top: 20px; margin-bottom: 10px;">Playlists</h3>
-                <button class="btn-playlist" onclick="playPlaylist('spotify:playlist:37i9dQZF1DX8Sz1gsYZdwj')">
-                   Sleep 
+                <button class="btn-playlist" onclick="playPlaylist('spotify:playlist:37i9dQZF1DX8Sz1gsYZdwj', true)">
+                   Sleep
                 </button>
                 <button class="btn-playlist" onclick="playPlaylist('spotify:album:33FiXrPqAW1gYMxFfFgWcm')">
                    Cafe noises
@@ -491,9 +491,9 @@ h3 {
             }, 2000);
         }
 
-        async function playPlaylist(uri) {
+        async function playPlaylist(uri, startSleepTimer = false) {
             const statusElement = document.getElementById('spotify-status');
-            
+
             try {
                 const response = await fetch('/api/spotify/playlist', {
                     method: 'POST',
@@ -502,10 +502,15 @@ h3 {
                 });
 
                 const data = await response.json();
-                
+
                 if (data.status === 'success') {
                     statusElement.textContent = '▶️ Playing playlist';
                     statusElement.className = 'status success';
+
+                    // Start sleep timer if requested
+                    if (startSleepTimer) {
+                        await startSleepTimerNow();
+                    }
                 } else {
                     statusElement.textContent = 'Error: ' + data.error;
                     statusElement.className = 'status error';
@@ -519,6 +524,28 @@ h3 {
             setTimeout(() => {
                 statusElement.className = 'status hidden';
             }, 2000);
+        }
+
+        async function startSleepTimerNow() {
+            const statusElement = document.getElementById('spotify-status');
+
+            try {
+                const response = await fetch('/api/spotify/sleep-timer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    statusElement.textContent = '⏰ Sleep timer set (45 min)';
+                    statusElement.className = 'status success';
+                } else {
+                    console.error('Error setting sleep timer:', data.error);
+                }
+            } catch (error) {
+                console.error('Error setting sleep timer:', error);
+            }
         }
     </script>
 </body>

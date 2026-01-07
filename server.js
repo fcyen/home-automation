@@ -21,6 +21,7 @@ const spotifyApi = new SpotifyWebApi({
 
 let accessToken = null;
 let refreshToken = null;
+let sleepTimer = null;
 
 // Spotify Authorization
 app.get('/login', (req, res) => {
@@ -188,6 +189,33 @@ app.post('/api/volume/mute', async (req, res) => {
         console.error('Error toggling mute:', error);
         res.status(500).json({ error: 'Failed to toggle mute' });
     }
+});
+
+// Sleep timer endpoint
+app.post('/api/spotify/sleep-timer', async (req, res) => {
+    if (!accessToken) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    // Clear any existing sleep timer
+    if (sleepTimer) {
+        clearTimeout(sleepTimer);
+        sleepTimer = null;
+    }
+
+    // Set timer for 45 minutes (45 * 60 * 1000 milliseconds)
+    sleepTimer = setTimeout(async () => {
+        try {
+            await spotifyApi.pause();
+            console.log('Sleep timer triggered - playback paused');
+            sleepTimer = null;
+        } catch (error) {
+            console.error('Error pausing playback from sleep timer:', error);
+        }
+    }, 45 * 60 * 1000);
+
+    console.log('Sleep timer set for 45 minutes');
+    res.json({ status: 'success', message: 'Sleep timer set for 45 minutes' });
 });
 
 // Button A and B endpoints
